@@ -1,0 +1,15 @@
+spring:
+  cloud:
+    aws:
+      secretsmanager:
+        enabled: true
+      region:
+        static: ${AWS_REGION:eu-west-1}
+
+pdm:
+  base-url: ${aws-secretsmanager:/pdm-orchestration/pdm-base-url}
+  api-key: ${aws-secretsmanager:/pdm-orchestration/pdm-api-key}
+
+upload:
+  base-url: ${aws-secretsmanager:/pdm-orchestration/upload-base-url}
+  api-key: ${aws-secretsmanager:/pdm-orchestration/upload-api-key}

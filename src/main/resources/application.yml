@@ -1,0 +1,17 @@
+orchestration:
+  max-concurrency: ${ORCHESTRATION_MAX_CONCURRENCY:100}
+
+pdm:
+  base-url: ${PDM_BASE_URL:http://localhost:8081}
+  api-key: ${PDM_API_KEY:changeme}
+
+upload:
+  base-url: ${UPLOAD_BASE_URL:http://localhost:8082}
+  api-key: ${UPLOAD_API_KEY:changeme}
+
+spring:
+  application:
+    name: pdm-orchestration
+  threads:
+    virtual:
+      enabled: true
