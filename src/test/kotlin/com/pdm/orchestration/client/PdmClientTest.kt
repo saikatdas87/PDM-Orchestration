@@ -1,6 +1,7 @@
 package com.pdm.orchestration.client
 
 import com.pdm.orchestration.exception.PdmApiException
+import com.pdm.orchestration.model.PdmFile
 import com.pdm.orchestration.model.UploadRequest
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -60,7 +61,7 @@ class PdmClientTest {
         server.expect(requestTo(containsString("/download/f1")))
             .andRespond(withSuccess("filecontent".toByteArray(), MediaType.APPLICATION_OCTET_STREAM))
 
-        val result = pdmClient.downloadFile(com.pdm.orchestration.model.PdmFile("f1", "file1.stp", "/download/f1"))
+        val result = pdmClient.downloadFile(PdmFile("f1", "file1.stp", "/download/f1"))
 
         assertEquals("filecontent", String(result))
     }
@@ -71,7 +72,7 @@ class PdmClientTest {
             .andRespond(withServerError())
 
         assertThrows<PdmApiException> {
-            pdmClient.downloadFile(com.pdm.orchestration.model.PdmFile("f1", "file1.stp", "/download/f1"))
+            pdmClient.downloadFile(PdmFile("f1", "file1.stp", "/download/f1"))
         }
     }
 }
