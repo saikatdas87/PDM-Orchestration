@@ -27,28 +27,26 @@ class OrchestrationService(
     private val log = LoggerFactory.getLogger(javaClass)
     private val semaphore = Semaphore(props.maxConcurrency)
 
-    fun orchestrate(request: UploadRequest): UploadResponse {
+    fun orchestrate(request: UploadRequest): UploadResponse = runBlocking(Dispatchers.Virtual) {
         log.info("Starting orchestration for modelId=${request.modelId} orderId=${request.orderId} dateFrom=${request.dateFrom} dateTo=${request.dateTo}")
 
-        val files = pdmClient.queryFiles(request)
+        val files = retry(maxAttempts = 3, delayMs = 500) { pdmClient.queryFiles(request) }
 
         if (files.isEmpty()) {
             log.info("No files found for modelId=${request.modelId}")
-            return UploadResponse(emptyList(), emptyList())
+            return@runBlocking UploadResponse(emptyList(), emptyList())
         }
 
         log.info("Found ${files.size} file(s) for modelId=${request.modelId}: ${files.map { it.fileId }}")
 
-        val results = runBlocking(Dispatchers.Virtual) {
-            files.map { file ->
-                async {
-                    semaphore.withPermit {
-                        log.info("Processing fileId=${file.fileId} fileName=${file.fileName}")
-                        file.fileId to runCatching { retry(maxAttempts = 3, delayMs = 500) { processFile(file) } }
-                    }
+        val results = files.map { file ->
+            async {
+                semaphore.withPermit {
+                    log.info("Processing fileId=${file.fileId} fileName=${file.fileName}")
+                    file.fileId to runCatching { retry(maxAttempts = 3, delayMs = 500) { processFile(file) } }
                 }
-            }.awaitAll()
-        }
+            }
+        }.awaitAll()
 
         val (successResults, failureResults) = results.partition { (_, result) -> result.isSuccess }
 
@@ -68,7 +66,7 @@ class OrchestrationService(
             log.warn("Failed files: ${failed.map { "${it.fileId}: ${it.reason}" }}")
         }
 
-        return UploadResponse(succeeded, failed)
+        UploadResponse(succeeded, failed)
     }
 
     fun queryOnly(request: UploadRequest): List<PdmFile> = pdmClient.queryFiles(request)
